@@ -1,24 +1,20 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
-
-const DATA = [
-  { title: 'Mehta Industries v. Union of India', parties: 'Writ · Taxation', court: 'Delhi HC', num: 'W.P. 8842/2025', next: '22 Oct', status: 'Active', tone: 'ok' },
-  { title: 'Verma Estate — Succession', parties: 'Probate', court: 'Saket DC', num: 'Prob. 231/2024', next: '24 Oct', status: 'Hearing soon', tone: 'warn' },
-  { title: 'Khanna Bail Application', parties: 'Criminal · 439 CrPC', court: 'Delhi HC', num: 'Bail 5521/2025', next: '29 Oct', status: 'Filed', tone: 'ok' },
-  { title: 'Horizon Tech — Master Services', parties: 'Advisory · Corporate', court: 'Advisory', num: '—', next: '—', status: 'Drafting', tone: 'muted' },
-  { title: 'Rao v. Sunrise Developers', parties: 'Civil · RERA', court: 'NCDRC', num: 'C.C. 112/2025', next: '06 Nov', status: 'Active', tone: 'ok' },
-  { title: 'Patel Family Trust', parties: 'Advisory · Trusts', court: 'Advisory', num: '—', next: '—', status: 'Disposed', tone: 'muted' },
-];
+import Modal from '../components/Modal.jsx';
+import { MATTERS } from '../data/sample.js';
 
 const TABS = ['All', 'Active', 'Hearing soon', 'Drafting', 'Disposed'];
 
 export default function Matters() {
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const [tab, setTab] = useState('All');
   const [q, setQ] = useState('');
+  const showNew = params.get('new') === '1';
+  const closeNew = () => setParams({}, { replace: true });
 
-  const rows = DATA.filter((m) =>
+  const rows = MATTERS.filter((m) =>
     (tab === 'All' || m.status === tab) &&
     (m.title.toLowerCase().includes(q.toLowerCase()) || m.num.toLowerCase().includes(q.toLowerCase()))
   );
@@ -29,22 +25,16 @@ export default function Matters() {
         <div>
           <span className="ph__eyebrow">Workspace</span>
           <h1 className="ph__title">Matters</h1>
-          <p className="ph__sub">Every case, brief and advisory in your chambers — one place.</p>
+          <p className="ph__sub">Every case, brief and advisory in your chambers — in one place.</p>
         </div>
-        <button className="lx-btn lx-btn--gold" onClick={() => navigate('/draft')}><Ic.Plus size={15} /> New matter</button>
+        <button className="lx-btn lx-btn--gold" onClick={() => setParams({ new: '1' })}><Ic.Plus size={15} /> New matter</button>
       </div>
 
       <div className="lx-between" style={{ marginBottom: 18, gap: 14, flexWrap: 'wrap' }}>
         <div className="lx-row" style={{ gap: 6, flexWrap: 'wrap' }}>
           {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="lx-btn lx-btn--sm"
-              style={tab === t
-                ? { background: 'var(--ink)', color: 'var(--paper)' }
-                : { background: 'transparent', color: 'var(--ink-soft)', border: '1px solid var(--rule)' }}
-            >{t}</button>
+            <button key={t} onClick={() => setTab(t)} className="lx-btn lx-btn--sm"
+              style={tab === t ? { background: 'var(--ink)', color: 'var(--paper)' } : { background: 'transparent', color: 'var(--ink-soft)', border: '1px solid var(--rule)' }}>{t}</button>
           ))}
         </div>
         <div className="lx-field" style={{ height: 40, maxWidth: 260 }}>
@@ -55,12 +45,12 @@ export default function Matters() {
 
       <div className="lx-card lx-card--pad">
         <div className="lx-list">
-          {rows.map((m, i) => (
-            <div className="lx-item" key={i} onClick={() => navigate('/matters')} style={{ padding: '16px 4px' }}>
+          {rows.map((m) => (
+            <div className="lx-item" key={m.id} onClick={() => navigate('/matters/' + m.id)} style={{ padding: '16px 4px' }}>
               <div className="lx-item__ico"><Ic.Scale size={18} /></div>
               <div className="lx-item__body" style={{ flex: 2 }}>
                 <div className="lx-item__title">{m.title}</div>
-                <div className="lx-item__meta">{m.parties}</div>
+                <div className="lx-item__meta">{m.type}</div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }} className="hide-sm">
                 <div style={{ fontSize: 13.5, color: 'var(--ink-soft)' }}>{m.court}</div>
@@ -78,6 +68,21 @@ export default function Matters() {
           )}
         </div>
       </div>
+
+      {showNew && (
+        <Modal title="New matter" onClose={closeNew}
+          footer={<><button className="lx-btn lx-btn--ghost" onClick={closeNew}>Cancel</button><button className="lx-btn lx-btn--primary" onClick={() => navigate('/matters/m-8842')}>Create matter</button></>}>
+          <div><label className="lbl">Matter title</label><input className="inp" placeholder="e.g. Mehta Industries v. Union of India" /></div>
+          <div className="lx-row" style={{ gap: 14 }}>
+            <div style={{ flex: 1 }}><label className="lbl">Court</label><input className="inp" placeholder="Delhi High Court" /></div>
+            <div style={{ flex: 1 }}><label className="lbl">Case / CNR no.</label><input className="inp" placeholder="W.P.(C) …" /></div>
+          </div>
+          <div><label className="lbl">Client</label><input className="inp" placeholder="Client name" /></div>
+          <div className="lx-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            {['Writ', 'Civil', 'Criminal', 'Advisory', 'Consumer'].map((t) => <span key={t} className="chip">{t}</span>)}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
 import ThemeStudio from '../components/ThemeStudio.jsx';
+import CommandBar from '../components/CommandBar.jsx';
+import Notifications from '../components/Notifications.jsx';
 import { useSettings } from '../store/useSettings.js';
+
+const fire = (name) => window.dispatchEvent(new Event(name));
 
 const GROUPS = [
   {
@@ -81,8 +85,11 @@ export default function Shell() {
           </nav>
 
           <div className="topbar__right">
-            <button className="cmdk"><Ic.Search size={16} /><span>Search or ask anything</span><kbd>⌘K</kbd></button>
-            <button className="icon-btn" aria-label="Notifications"><Ic.Bell size={18} /></button>
+            <button className="cmdk" onClick={() => fire('lx:cmdk')}><Ic.Search size={16} /><span>Search or ask anything</span><kbd>⌘K</kbd></button>
+            <button className="icon-btn" aria-label="Notifications" style={{ position: 'relative' }} onClick={() => fire('lx:notifications')}>
+              <Ic.Bell size={18} />
+              <span style={{ position: 'absolute', top: 8, right: 9, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', border: '2px solid var(--paper)' }} />
+            </button>
           </div>
         </header>
 
@@ -90,6 +97,8 @@ export default function Shell() {
       </div>
 
       <ThemeStudio />
+      <CommandBar />
+      <Notifications />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import './styles/themes.css';
 import './styles/luxury-system.css';
 import './styles/shell.css';
 import './styles/studio.css';
+import './styles/pages.css';
 import './store/useSettings.js'; // applies saved theme/layout on load
 import App from './App.jsx';
 
