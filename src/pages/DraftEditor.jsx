@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
 
 const TOOLS = ['H', 'B', 'I', 'U', '“”', '•', '1.', '⎌'];
+// WordCraft (open-source Rust MS-Word engine) static WASM bundle, served under the app.
+const WORDCRAFT_SRC = `${import.meta.env.BASE_URL}wordcraft/index.html`;
 
 export default function DraftEditor() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState('preview'); // 'preview' | 'wordcraft'
 
   return (
     <div className="lx-page lx-rise" style={{ maxWidth: 1240 }}>
@@ -16,7 +20,7 @@ export default function DraftEditor() {
             <div className="dh__meta"><span><b>Mehta Industries v. Union of India</b></span><span>Draft · autosaved 2m ago</span></div>
           </div>
           <div className="lx-row" style={{ gap: 10 }}>
-            <button className="lx-btn lx-btn--ghost lx-btn--sm"><Ic.Upload size={14} /> Export</button>
+            <button className="lx-btn lx-btn--ghost lx-btn--sm"><Ic.Upload size={14} /> Export .docx</button>
             <button className="lx-btn lx-btn--gold lx-btn--sm"><Ic.Check size={14} /> Finalise & file</button>
           </div>
         </div>
@@ -25,19 +29,36 @@ export default function DraftEditor() {
       <div className="ed">
         <div className="ed__main">
           <div className="ed__bar">
-            {TOOLS.map((t) => <button className="ed__tool" key={t}>{t}</button>)}
+            <div className="seg" style={{ width: 230 }}>
+              <button className={mode === 'preview' ? 'is-on' : ''} onClick={() => setMode('preview')}>Preview</button>
+              <button className={mode === 'wordcraft' ? 'is-on' : ''} onClick={() => setMode('wordcraft')}>WordCraft editor</button>
+            </div>
             <span style={{ flex: 1 }} />
-            <span className="lx-badge lx-badge--ok" style={{ marginRight: 4 }}><span className="dot" /> Saved</span>
+            {mode === 'preview'
+              ? <>{TOOLS.map((t) => <button className="ed__tool" key={t}>{t}</button>)}<span className="lx-badge lx-badge--ok" style={{ marginLeft: 6 }}><span className="dot" /> Saved</span></>
+              : <span className="lx-badge"><Ic.Sparkle size={13} /> Open-source · Rust/WASM</span>}
           </div>
-          <div className="ed__paper">
-            <h2>In the High Court of Delhi at New Delhi</h2>
-            <div className="sub">W.P.(C) 8842 of 2025</div>
-            <p style={{ textAlign: 'center', marginBottom: 24 }}><b>Rejoinder on behalf of the Petitioner</b></p>
-            <p>MOST RESPECTFULLY SHOWETH:</p>
-            <p>1. That the present rejoinder is being filed in answer to the counter-affidavit dated 18.09.2026 filed on behalf of the Respondent. The contents of the writ petition are reiterated and not repeated herein for the sake of brevity.</p>
-            <p>2. That the preliminary objection as to maintainability is misconceived. The impugned demand notice dated 12.08.2025 was issued beyond the period of limitation prescribed under the amended Section 149 of the Act, as held in <i>Union of India v. Rajeev Bansal</i>, (2024) and <i>Ashish Agarwal</i> (2022).</p>
-            <p style={{ color: 'var(--muted)' }}>3. That without prejudice to the above, the reassessment is also vitiated by a mere change of opinion, no new tangible material having been disclosed…<span style={{ color: 'var(--accent-ink)' }}> ▍</span></p>
-          </div>
+
+          {mode === 'preview' ? (
+            <div className="ed__paper">
+              <h2>In the High Court of Delhi at New Delhi</h2>
+              <div className="sub">W.P.(C) 8842 of 2025</div>
+              <p style={{ textAlign: 'center', marginBottom: 24 }}><b>Rejoinder on behalf of the Petitioner</b></p>
+              <p>MOST RESPECTFULLY SHOWETH:</p>
+              <p>1. That the present rejoinder is being filed in answer to the counter-affidavit dated 18.09.2026 filed on behalf of the Respondent. The contents of the writ petition are reiterated and not repeated herein for the sake of brevity.</p>
+              <p>2. That the preliminary objection as to maintainability is misconceived. The impugned demand notice dated 12.08.2025 was issued beyond the period of limitation prescribed under the amended Section 149 of the Act, as held in <i>Union of India v. Rajeev Bansal</i>, (2024) and <i>Ashish Agarwal</i> (2022).</p>
+              <p style={{ color: 'var(--muted)' }}>3. That without prejudice to the above, the reassessment is also vitiated by a mere change of opinion, no new tangible material having been disclosed…<span style={{ color: 'var(--accent-ink)' }}> ▍</span></p>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', height: '72vh', minHeight: 520, background: '#e6e6e6' }}>
+              <iframe
+                title="WordCraft editor"
+                src={WORDCRAFT_SRC}
+                allow="fullscreen; clipboard-read; clipboard-write"
+                style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="ed__side">
