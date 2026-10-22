@@ -32,10 +32,10 @@ index ca6ad46..bd9721d 100644
      #wordcraft_canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 diff --git a/apps/wordcraft-web/src/bridge.rs b/apps/wordcraft-web/src/bridge.rs
 new file mode 100644
-index 0000000..f2622f2
+index 0000000..9816731
 --- /dev/null
 +++ b/apps/wordcraft-web/src/bridge.rs
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,208 @@
 +//! JS ⇄ WordCraft bridge.
 +//!
 +//! Lets the host page drive the running editor without touching egui input events:
@@ -66,6 +66,7 @@ index 0000000..f2622f2
 +    pub bytes_out: HashMap<String, Vec<u8>>,
 +    pub text: String,
 +    pub html: String,
++    pub selection: String,
 +    pub rev: u64,
 +    pub doc_id: u64,
 +    pub ready: bool,
@@ -140,6 +141,13 @@ index 0000000..f2622f2
 +#[wasm_bindgen]
 +pub fn wc_html() -> String {
 +    read(String::new(), |s| s.html.clone())
++}
++
++/// The currently selected text (empty when nothing is selected). Lets the host run a
++/// selection-scoped AI edit and write the result back.
++#[wasm_bindgen]
++pub fn wc_selection() -> String {
++    read(String::new(), |s| s.selection.clone())
 +}
 +
 +/// Revision counter — bumped by every change. Host polls this to know when to autosave.
@@ -219,6 +227,15 @@ index 0000000..f2622f2
 +        s.rev = rev;
 +        s.doc_id = doc_id;
 +        s.ready = true;
++    }
++
++    // Mirror the current selection every frame (it changes on caret move, independent of `rev`).
++    let sel = app.session.selected_text();
++    {
++        let mut s = bridge.borrow_mut();
++        if s.selection != sel {
++            s.selection = sel;
++        }
 +    }
 +
 +    // Heartbeat: keep a gentle repaint pending so queued host commands are always applied
