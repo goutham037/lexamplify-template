@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
 
 const TEMPLATES = ['Legal notice', 'Bail application', 'Written statement', 'Rent agreement', 'Mutual NDA', 'Plaint'];
 
 export default function Draft() {
+  const navigate = useNavigate();
   const [brief, setBrief] = useState('');
   const [tpl, setTpl] = useState('Legal notice');
 
@@ -43,7 +45,7 @@ export default function Draft() {
             <input placeholder="Attach to matter — Mehta Industries v. Union of India" style={{ fontSize: 13.5 }} />
           </div>
 
-          <button className="lx-btn lx-btn--primary" style={{ width: '100%', height: 48 }}><Ic.Sparkle size={16} /> Generate draft</button>
+          <button className="lx-btn lx-btn--primary" style={{ width: '100%', height: 48 }} onClick={() => navigate('/draft/new')}><Ic.Sparkle size={16} /> Generate draft</button>
           <div className="lx-muted" style={{ textAlign: 'center' }}>Every authority cited is verifiable · Nothing is invented</div>
         </div>
 

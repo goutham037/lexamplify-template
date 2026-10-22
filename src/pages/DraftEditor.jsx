@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
 
@@ -70,8 +71,11 @@ export default function DraftEditor() {
         </div>
       </div>
 
-      {/* Full-window WordCraft editor with a Lexamplify-themed toolbar (follows Theme Studio) */}
-      {full && (
+      {/* Full-window WordCraft editor with a Lexamplify-themed toolbar (follows Theme Studio).
+          Portaled to <body> so position:fixed resolves against the viewport, not the
+          transformed .lx-page ancestor (.lx-rise keeps a translateY, which would otherwise
+          make the overlay a child containing-block and shrink/stretch the iframe). */}
+      {full && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
           <header style={{ height: 58, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', borderBottom: '1px solid var(--rule)', background: 'var(--paper)' }}>
             <div className="lx-row" style={{ gap: 12, minWidth: 0 }}>
@@ -94,7 +98,8 @@ export default function DraftEditor() {
             allow="fullscreen; clipboard-read; clipboard-write"
             style={{ flex: 1, width: '100%', border: 0, display: 'block' }}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
