@@ -1,3 +1,24 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index 2a7e9aa..d7e738f 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -98,9 +98,13 @@ opt-level = 2
+ opt-level = 1
+ 
+ [profile.release]
+-opt-level = 3
+-lto = "thin"
+-codegen-units = 16
++# Lexamplify web build: optimize the wasm for SIZE (opt-level "z") not speed, and strip symbols.
++# This profile is only used by our patched CI build of the web bundle; it does not affect upstream
++# desktop builds. Paired with wasm-opt -Oz + gzip delivery it roughly thirds the download.
++opt-level = "z"
++lto = "fat"
++codegen-units = 1
++strip = true
+ debug = 0
+ 
+ # Required by craft-pdf: the backend rejects writers that failed during unwinding.
 diff --git a/apps/wordcraft-web/src/bridge.rs b/apps/wordcraft-web/src/bridge.rs
 new file mode 100644
 index 0000000..f2622f2

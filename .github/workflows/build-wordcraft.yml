@@ -13,7 +13,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 110
     steps:
       - name: Checkout template (for the patch)
         uses: actions/checkout@v4
@@ -59,16 +59,19 @@ jobs:
         working-directory: wc/apps/wordcraft-web
         run: trunk build --release
 
-      - name: Shrink wasm (wasm-opt -Oz)
+      - name: Shrink wasm (wasm-opt -Oz) + gzip for delivery
         run: |
           set -e
           sudo apt-get update -qq && sudo apt-get install -y -qq binaryen
           cd wc/dist/web
           for f in *_bg.wasm; do
-            echo "before: $(du -h "$f" | cut -f1)"
+            echo "built:   $(du -h "$f" | cut -f1)"
             wasm-opt -Oz --strip-debug --strip-dwarf --vacuum "$f" -o "$f.opt"
             mv "$f.opt" "$f"
-            echo "after:  $(du -h "$f" | cut -f1)"
+            echo "opt -Oz: $(du -h "$f" | cut -f1)"
+            # Pre-gzip for client-side decompression (GitHub Pages won't compress wasm itself).
+            gzip -9 -k -f "$f"
+            echo "gzip -9: $(du -h "$f.gz" | cut -f1)"
           done
 
       - name: Show output
