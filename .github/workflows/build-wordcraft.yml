@@ -13,7 +13,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 110
+    timeout-minutes: 70
     steps:
       - name: Checkout template (for the patch)
         uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
           cd wc/dist/web
           for f in *_bg.wasm; do
             echo "built:   $(du -h "$f" | cut -f1)"
-            wasm-opt -Oz --strip-debug --strip-dwarf --vacuum "$f" -o "$f.opt"
+            wasm-opt -Oz -all --strip-debug --strip-dwarf --vacuum "$f" -o "$f.opt"
             mv "$f.opt" "$f"
             echo "opt -Oz: $(du -h "$f" | cut -f1)"
             # Pre-gzip for client-side decompression (GitHub Pages won't compress wasm itself).
