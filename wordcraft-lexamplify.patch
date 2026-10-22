@@ -1,9 +1,9 @@
 diff --git a/apps/wordcraft-web/src/bridge.rs b/apps/wordcraft-web/src/bridge.rs
 new file mode 100644
-index 0000000..96cc4aa
+index 0000000..f2622f2
 --- /dev/null
 +++ b/apps/wordcraft-web/src/bridge.rs
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,191 @@
 +//! JS ⇄ WordCraft bridge.
 +//!
 +//! Lets the host page drive the running editor without touching egui input events:
@@ -187,6 +187,12 @@ index 0000000..96cc4aa
 +        s.rev = rev;
 +        s.doc_id = doc_id;
 +        s.ready = true;
++    }
++
++    // Heartbeat: keep a gentle repaint pending so queued host commands are always applied
++    // promptly, even when the user isn't interacting (an idle egui app stops running frames).
++    if let Some(ctx) = bridge.borrow().ctx.clone() {
++        ctx.request_repaint_after(std::time::Duration::from_millis(200));
 +    }
 +}
 diff --git a/apps/wordcraft-web/src/main.rs b/apps/wordcraft-web/src/main.rs
