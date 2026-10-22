@@ -64,9 +64,14 @@ jobs:
           set -e
           sudo apt-get update -qq && sudo apt-get install -y -qq binaryen
           cd wc/dist/web
+          # Enable ONLY the stable features rustc emits for wasm32 (NOT -all, which turns on GC /
+          # memory64 and produces a binary browsers reject with "unknown type form").
+          FEATURES="--enable-bulk-memory --enable-mutable-globals --enable-nontrapping-float-to-int --enable-sign-ext --enable-reference-types"
           for f in *_bg.wasm; do
             echo "built:   $(du -h "$f" | cut -f1)"
-            wasm-opt -Oz -all --strip-debug --strip-dwarf --vacuum "$f" -o "$f.opt"
+            wasm-opt -Oz $FEATURES --strip-debug --strip-dwarf --vacuum "$f" -o "$f.opt"
+            # Validate the optimized wasm actually loads in a JS engine; fail the build if not.
+            node -e "const b=require('fs').readFileSync('$f.opt'); if(!WebAssembly.validate(b)){console.error('INVALID wasm after wasm-opt'); process.exit(1)} console.log('wasm validates')"
             mv "$f.opt" "$f"
             echo "opt -Oz: $(du -h "$f" | cut -f1)"
             # Pre-gzip for client-side decompression (GitHub Pages won't compress wasm itself).
