@@ -1,8 +1,11 @@
 name: build-wordcraft
 
-# Builds a de-branded WordCraft web (WASM) bundle: WordCraft is MIT/Apache-2.0, so we
-# patch out the Discord / community links and rebuild. Run manually (workflow_dispatch);
-# download the 'wordcraft-web-nodiscord' artifact and drop it into public/wordcraft/.
+# Builds the Lexamplify WordCraft web (WASM) bundle. WordCraft is MIT/Apache-2.0; we build a
+# pinned upstream commit and apply wordcraft-lexamplify.patch, which:
+#   - adds a JS<->WordCraft bridge (apps/wordcraft-web/src/bridge.rs + web.rs/main.rs) so the host
+#     page can load a draft, drive edits through the engine, read the doc out and export bytes;
+#   - removes the Discord links; re-themes the accent to Slate Pro blue (#2563C9).
+# Run manually (workflow_dispatch); download the 'wordcraft-web-lexamplify' artifact into public/wordcraft/.
 
 on:
   workflow_dispatch:
@@ -10,30 +13,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
-      - name: Clone WordCraft source (pinned to v0.9.0)
-        run: git clone --depth 1 --branch v0.9.0 https://github.com/storytold/wordcraft.git wc
+      - name: Checkout template (for the patch)
+        uses: actions/checkout@v4
 
-      - name: Patch — remove Discord + re-theme accent to Slate Pro
+      - name: Fetch WordCraft source (pinned commit)
+        run: |
+          set -e
+          mkdir wc && cd wc
+          git init -q
+          git remote add origin https://github.com/storytold/wordcraft.git
+          git fetch --depth 1 origin 5a6d2b6070bdfb7d1a41bb55b60e86bf09a1fc52
+          git checkout -q FETCH_HEAD
+
+      - name: Apply Lexamplify patch (bridge + de-brand + Slate Pro)
         working-directory: wc
         run: |
           set -e
-          # Chrome sidebar Discord button: default the feature flag off.
-          sed -i 's/show_discord: true/show_discord: false/' crates/ui-egui/src/lib.rs
-          # File-menu backstage: drop the "Discord community" entry.
-          sed -i 's/, ("Discord community", "discord")//' crates/ui-egui/src/backstage.rs
-          # Welcome/About dialog hyperlink + Help keytip.
-          sed -i '/Join us on Discord/d' crates/ui-egui/src/dialogs.rs
-          sed -i '/Community Discord/d' crates/ui-egui/src/keytips.rs
-          # Re-theme the app accent to Slate Pro blue (#2563C9) and its ink (#1E54AD).
-          sed -i 's/from_rgb(0x3B, 0x5B, 0xDB)/from_rgb(0x25, 0x63, 0xC9)/' crates/ui-egui/src/theme.rs
-          sed -i 's/from_rgb(0x2B, 0x47, 0xB5)/from_rgb(0x1E, 0x54, 0xAD)/' crates/ui-egui/src/theme.rs
-          echo "--- verify patches applied ---"
-          grep -n "show_discord: false" crates/ui-egui/src/lib.rs || (echo "flag patch FAILED" && exit 1)
-          ! grep -q "Discord community" crates/ui-egui/src/backstage.rs || (echo "backstage patch FAILED" && exit 1)
-          grep -n "0x25, 0x63, 0xC9" crates/ui-egui/src/theme.rs || (echo "theme patch FAILED" && exit 1)
-          echo "patches OK"
+          git apply --verbose --whitespace=nowarn ../wordcraft-lexamplify.patch
+          echo "--- verify ---"
+          test -f apps/wordcraft-web/src/bridge.rs && echo "bridge.rs present"
+          grep -q "pub fn wc_load" apps/wordcraft-web/src/bridge.rs && echo "wc_load export present"
+          grep -q "crate::bridge::pump" apps/wordcraft-web/src/web.rs && echo "pump wired"
+          grep -q "show_discord: false" crates/ui-egui/src/lib.rs && echo "discord off"
+          grep -q "0x25, 0x63, 0xC9" crates/ui-egui/src/theme.rs && echo "slate pro accent"
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -46,7 +50,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             wc/target
-          key: wc-v0.9.0-${{ runner.os }}
+          key: wc-5a6d2b6-${{ runner.os }}
 
       - name: Install trunk
         run: cargo install trunk --locked || cargo install trunk
@@ -58,9 +62,9 @@ jobs:
       - name: Show output
         run: ls -la wc/dist/web
 
-      - name: Upload de-branded bundle
+      - name: Upload bundle
         uses: actions/upload-artifact@v4
         with:
-          name: wordcraft-web-nodiscord
+          name: wordcraft-web-lexamplify
           path: wc/dist/web
           if-no-files-found: error
