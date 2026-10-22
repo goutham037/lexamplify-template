@@ -96,7 +96,7 @@ export default function Shell() {
         <div className="main__scroll"><Outlet /></div>
       </div>
 
-      <ThemeStudio />
+      {/* Theme Studio hidden for now — Slate Pro is the finalized default. Re-enable by rendering <ThemeStudio />. */}
       <CommandBar />
       <Notifications />
     </div>

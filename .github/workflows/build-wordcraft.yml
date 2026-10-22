@@ -1,0 +1,62 @@
+name: build-wordcraft
+
+# Builds a de-branded WordCraft web (WASM) bundle: WordCraft is MIT/Apache-2.0, so we
+# patch out the Discord / community links and rebuild. Run manually (workflow_dispatch);
+# download the 'wordcraft-web-nodiscord' artifact and drop it into public/wordcraft/.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Clone WordCraft source (pinned to v0.9.0)
+        run: git clone --depth 1 --branch v0.9.0 https://github.com/storytold/wordcraft.git wc
+
+      - name: Patch out Discord / community links
+        working-directory: wc
+        run: |
+          set -e
+          # Chrome sidebar Discord button: default the feature flag off.
+          sed -i 's/show_discord: true/show_discord: false/' crates/ui-egui/src/lib.rs
+          # File-menu backstage: drop the "Discord community" entry.
+          sed -i 's/, ("Discord community", "discord")//' crates/ui-egui/src/backstage.rs
+          # Welcome/About dialog hyperlink + Help keytip.
+          sed -i '/Join us on Discord/d' crates/ui-egui/src/dialogs.rs
+          sed -i '/Community Discord/d' crates/ui-egui/src/keytips.rs
+          echo "--- verify patches applied ---"
+          grep -n "show_discord: false" crates/ui-egui/src/lib.rs || (echo "flag patch FAILED" && exit 1)
+          ! grep -q "Discord community" crates/ui-egui/src/backstage.rs || (echo "backstage patch FAILED" && exit 1)
+          echo "patches OK"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            wc/target
+          key: wc-v0.9.0-${{ runner.os }}
+
+      - name: Install trunk
+        run: cargo install trunk --locked || cargo install trunk
+
+      - name: Build web (WASM)
+        working-directory: wc/apps/wordcraft-web
+        run: trunk build --release
+
+      - name: Show output
+        run: ls -la wc/dist/web
+
+      - name: Upload de-branded bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: wordcraft-web-nodiscord
+          path: wc/dist/web
+          if-no-files-found: error
