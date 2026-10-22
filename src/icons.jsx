@@ -29,3 +29,21 @@ export const Filter = (p) => (<svg {...S({ ...p, sw: 2 })}><path d="M3 5h18l-7 8
 export const Palette = (p) => (<svg {...S(p)}><path d="M12 3a9 9 0 1 0 0 18c1 0 1.7-.8 1.7-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7Z" /><circle cx="7.5" cy="10.5" r="1" /><circle cx="12" cy="7.5" r="1" /><circle cx="16.5" cy="10.5" r="1" /></svg>);
 export const X = (p) => (<svg {...S({ ...p, sw: 2 })}><path d="M18 6 6 18M6 6l12 12" /></svg>);
 export const Sliders = (p) => (<svg {...S({ ...p, sw: 1.9 })}><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></svg>);
+
+// Editor toolbar + collaboration icons
+export const Undo = (p) => (<svg {...S(p)}><path d="M9 7 4 12l5 5" /><path d="M4 12h11a5 5 0 0 1 0 10h-1" /></svg>);
+export const Redo = (p) => (<svg {...S(p)}><path d="m15 7 5 5-5 5" /><path d="M20 12H9a5 5 0 0 0 0 10h1" /></svg>);
+export const List = (p) => (<svg {...S({ ...p, sw: 1.9 })}><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" /></svg>);
+export const ListOrdered = (p) => (<svg {...S({ ...p, sw: 1.9 })}><path d="M10 6h11M10 12h11M10 18h11M4 4v4M3 8h2M3.5 12.5h1.5l-1.5 2H5" /></svg>);
+export const Quote = (p) => (<svg {...S(p)}><path d="M7 7H4v5h3V9h-.5A1.5 1.5 0 0 1 8 7.5M17 7h-3v5h3V9h-.5A1.5 1.5 0 0 1 18 7.5" /></svg>);
+export const AlignLeft = (p) => (<svg {...S({ ...p, sw: 1.9 })}><path d="M3 6h18M3 12h12M3 18h15" /></svg>);
+export const AlignCenter = (p) => (<svg {...S({ ...p, sw: 1.9 })}><path d="M3 6h18M6 12h12M5 18h14" /></svg>);
+export const AlignJustify = (p) => (<svg {...S({ ...p, sw: 1.9 })}><path d="M3 6h18M3 12h18M3 18h18" /></svg>);
+export const Share = (p) => (<svg {...S(p)}><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6" /></svg>);
+export const Link = (p) => (<svg {...S(p)}><path d="M10 13a4 4 0 0 0 5.7.4l3-3a4 4 0 0 0-5.7-5.7L11 7" /><path d="M14 11a4 4 0 0 0-5.7-.4l-3 3a4 4 0 0 0 5.7 5.7L13 17" /></svg>);
+export const Eye = (p) => (<svg {...S(p)}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>);
+export const Edit = (p) => (<svg {...S(p)}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>);
+export const Copy = (p) => (<svg {...S(p)}><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>);
+export const Trash = (p) => (<svg {...S(p)}><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-14" /></svg>);
+export const Globe = (p) => (<svg {...S(p)}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" /></svg>);
+export const Comment = (p) => (<svg {...S(p)}><path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" /></svg>);

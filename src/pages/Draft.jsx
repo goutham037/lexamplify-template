@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
+import { useDocStore } from '../collab/useDocStore.js';
+import { generateDraftHtml, TEMPLATE_LIST } from '../collab/draftTemplates.js';
 
-const TEMPLATES = ['Legal notice', 'Bail application', 'Written statement', 'Rent agreement', 'Mutual NDA', 'Plaint'];
+const TEMPLATES = TEMPLATE_LIST;
 
 export default function Draft() {
   const navigate = useNavigate();
+  const createDoc = useDocStore((s) => s.createDoc);
   const [brief, setBrief] = useState('');
   const [tpl, setTpl] = useState('Legal notice');
+
+  function generate() {
+    const seedHtml = generateDraftHtml({ template: tpl, brief });
+    const id = createDoc({ title: tpl, matter: 'Mehta Industries v. Union of India', type: tpl, seedHtml });
+    navigate('/draft/' + id);
+  }
 
   return (
     <div className="lx-page lx-rise" style={{ maxWidth: 1200 }}>
@@ -45,7 +54,7 @@ export default function Draft() {
             <input placeholder="Attach to matter — Mehta Industries v. Union of India" style={{ fontSize: 13.5 }} />
           </div>
 
-          <button className="lx-btn lx-btn--primary" style={{ width: '100%', height: 48 }} onClick={() => navigate('/draft/new')}><Ic.Sparkle size={16} /> Generate draft</button>
+          <button className="lx-btn lx-btn--primary" style={{ width: '100%', height: 48 }} onClick={generate}><Ic.Sparkle size={16} /> Generate draft</button>
           <div className="lx-muted" style={{ textAlign: 'center' }}>Every authority cited is verifiable · Nothing is invented</div>
         </div>
 
