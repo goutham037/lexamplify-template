@@ -59,6 +59,18 @@ jobs:
         working-directory: wc/apps/wordcraft-web
         run: trunk build --release
 
+      - name: Shrink wasm (wasm-opt -Oz)
+        run: |
+          set -e
+          sudo apt-get update -qq && sudo apt-get install -y -qq binaryen
+          cd wc/dist/web
+          for f in *_bg.wasm; do
+            echo "before: $(du -h "$f" | cut -f1)"
+            wasm-opt -Oz --strip-debug --strip-dwarf --vacuum "$f" -o "$f.opt"
+            mv "$f.opt" "$f"
+            echo "after:  $(du -h "$f" | cut -f1)"
+          done
+
       - name: Show output
         run: ls -la wc/dist/web
 
