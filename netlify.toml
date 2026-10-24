@@ -4,10 +4,20 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  edge_functions = "netlify/edge-functions"
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
+
+# /api/* is handled by the edge function netlify/edge-functions/api-proxy.js: it proxies to the
+# backend AND strips the auth cookie's Domain so login works on the netlify.app host (the frontend
+# calls a relative /api, so this stays same-origin — no CORS, no SameSite change needed).
+# SPA fallback keeps client-side deep links (/vault, /court-resources, /editor) from 404ing.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 # Make sure the WASM is served with the right type (needed for streaming instantiation) and
 # cached hard (its filename is content-hashed, so it can cache forever).

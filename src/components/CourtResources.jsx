@@ -1150,7 +1150,7 @@ export default function CourtResources() {
   // ── secure reverse proxy — used for cause lists (embeds inside app) ──────
   const openInAppBrowser = (targetUrl) => {
     if (!targetUrl) return;
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://lexamplify-backend.onrender.com';
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '';
     const proxyUrl = `${apiBase}/api/proxy?target_url=${encodeURIComponent(targetUrl)}`;
     const windowFeatures = 'width=1024,height=768,left=150,top=80,resizable=yes,scrollbars=yes,status=no,toolbar=no,noopener,noreferrer';
     const popup = window.open(proxyUrl, 'LexAISecureBrowser', windowFeatures);
@@ -1203,7 +1203,7 @@ export default function CourtResources() {
     const isScraping = form.url_type === 'dynamic_pdf';
     setPdfModal({ open: true, loading: true, isScraping, error: false, blobUrl: null, title: form.name, fallbackUrl: form.url });
     try {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://lexamplify-backend.onrender.com';
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       let fetchUrl;
       if (isScraping) {
         // dynamic_pdf: backend scrapes sci.gov.in/forms/, extracts direct PDF href, streams binary
@@ -1235,7 +1235,7 @@ export default function CourtResources() {
     setLoadingEvents(true);
     setEventsError(null);
     try {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://lexamplify-backend.onrender.com';
+      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       const res  = await fetch(`${apiBase}/api/legal-events${forceRefresh ? '?refresh=1' : ''}`);
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Feed unavailable');
