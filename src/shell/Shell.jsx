@@ -1,7 +1,6 @@
-import { useState, Suspense } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
-import ErrorBoundary from '../components/ErrorBoundary.jsx';
 import ThemeStudio from '../components/ThemeStudio.jsx';
 import CommandBar from '../components/CommandBar.jsx';
 import Notifications from '../components/Notifications.jsx';
@@ -123,13 +122,7 @@ export default function Shell() {
           </div>
         </header>
 
-        <div className="main__scroll">
-          <ErrorBoundary>
-            <Suspense fallback={<div style={{ minHeight: '50vh', display: 'grid', placeItems: 'center', color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>Loading…</div>}>
-              <Outlet />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
+        <div className="main__scroll"><Outlet /></div>
       </div>
 
       {/* Theme Studio hidden for now — Slate Pro is the finalized default. Re-enable by rendering <ThemeStudio />. */}

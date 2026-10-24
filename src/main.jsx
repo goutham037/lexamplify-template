@@ -7,7 +7,6 @@ import './styles/studio.css';
 import './styles/pages.css';
 import './styles/editor.css';
 import './store/useSettings.js'; // applies saved theme/layout on load
-import './utils/authFetch.js';   // patches fetch: cookie creds + CSRF + silent refresh on same-origin /api
 import App from './App.jsx';
 
 // StrictMode intentionally omitted: its dev double-mount would init/destroy the Yjs
