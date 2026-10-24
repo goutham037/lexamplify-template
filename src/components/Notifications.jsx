@@ -1,15 +1,40 @@
 import { useState, useEffect } from 'react';
 import * as Ic from '../icons.jsx';
-import { NOTIFICATIONS } from '../data/sample.js';
 
-const ICON = { gavel: Ic.Gavel, clock: Ic.Clock, draft: Ic.Draft, contract: Ic.Contracts, check: Ic.Check };
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const ICON = { gavel: Ic.Gavel, clock: Ic.Clock, draft: Ic.Draft, contract: Ic.Contracts, check: Ic.Check, hearing: Ic.Gavel, deadline: Ic.Clock };
+
+// Map a backend notification to the shape this drawer renders. The practice
+// notifications endpoint returns items with varying fields across versions, so
+// read defensively and never invent anything.
+function toItem(n) {
+  return {
+    title: n.title || n.message || n.text || 'Notification',
+    meta: n.meta || n.detail || n.body || n.case_title || '',
+    time: n.time || n.when || (n.created_at ? new Date(String(n.created_at).replace(' ', 'T')).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : ''),
+    icon: n.icon || n.type || 'check',
+    unread: n.unread ?? !n.read,
+  };
+}
 
 export default function Notifications() {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState(NOTIFICATIONS);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const onOpen = () => setOpen(true);
+    const onOpen = () => {
+      setOpen(true);
+      setLoading(true);
+      fetch(`${API_BASE}/api/practice/notifications`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          const list = d?.notifications || d?.items || (Array.isArray(d) ? d : []);
+          setItems(Array.isArray(list) ? list.map(toItem) : []);
+        })
+        .catch(() => setItems([]))
+        .finally(() => setLoading(false));
+    };
     const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
     window.addEventListener('lx:notifications', onOpen);
     window.addEventListener('keydown', onKey);
@@ -33,6 +58,13 @@ export default function Notifications() {
           </div>
         </div>
         <div className="nd__list">
+          {loading && <div style={{ padding: '24px 18px', color: 'var(--muted)', fontSize: 13.5 }}>Loading…</div>}
+          {!loading && items.length === 0 && (
+            <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--muted)' }}>
+              <div style={{ display: 'grid', placeItems: 'center', marginBottom: 8 }}><Ic.Bell size={22} /></div>
+              You’re all caught up.
+            </div>
+          )}
           {items.map((n, i) => {
             const I = ICON[n.icon] || Ic.Bell;
             return (

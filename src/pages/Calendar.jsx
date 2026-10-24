@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as Ic from '../icons.jsx';
+import Modal from '../components/Modal.jsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -50,80 +51,79 @@ export default function Calendar() {
   const [events, setEvents] = useState([]); // normalized unified list
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showNew, setShowNew] = useState(false);
   const [cursor, setCursor] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
   });
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [evRes, caseRes] = await Promise.all([
-          fetch(`${API_BASE}/api/calendar/events`, { credentials: 'include' }),
-          fetch(`${API_BASE}/api/practice/cases?per_page=100&sort=next_hearing`, { credentials: 'include' }),
-        ]);
-        if (evRes.status === 401 || caseRes.status === 401) {
-          throw new Error('Your session has expired. Please sign in again.');
-        }
-
-        const evData = evRes.ok ? await evRes.json().catch(() => ({})) : {};
-        const caseData = caseRes.ok ? await caseRes.json().catch(() => ({})) : {};
-
-        const rawEvents = Array.isArray(evData.events) ? evData.events
-          : Array.isArray(evData) ? evData : [];
-        const rawCases = Array.isArray(caseData.cases) ? caseData.cases
-          : Array.isArray(caseData) ? caseData : [];
-
-        // Normalize calendar events.
-        const fromEvents = rawEvents
-          .map((ev) => {
-            const d = parseDateOnly(ev.event_date);
-            if (!d) return null;
-            const meta = [ev.location, ev.opposing_counsel].filter(Boolean).join(' · ')
-              || String(ev.event_type || 'Event').replace(/_/g, ' ');
-            return {
-              date: d,
-              time: timeFrom(ev.event_date),
-              title: ev.title || 'Untitled event',
-              meta,
-              tone: toneForType(ev.event_type),
-              type: ev.event_type || 'event',
-              source: 'event',
-            };
-          })
-          .filter(Boolean);
-
-        // A case with a next_hearing is a calendar entry (like Today.jsx treats it).
-        const fromHearings = rawCases
-          .filter((c) => c && !c.closed && c.next_hearing)
-          .map((c) => {
-            const d = parseDateOnly(c.next_hearing);
-            if (!d) return null;
-            const meta = [c.court, c.case_no].filter(Boolean).join(' · ') || 'Hearing';
-            return {
-              date: d,
-              time: '',
-              title: c.title || 'Matter',
-              meta,
-              tone: 'warn',
-              type: 'hearing',
-              source: 'hearing',
-            };
-          })
-          .filter(Boolean);
-
-        if (alive) setEvents([...fromEvents, ...fromHearings]);
-      } catch (err) {
-        if (alive) setError(err.message || 'Failed to load calendar.');
-      } finally {
-        if (alive) setLoading(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [evRes, caseRes] = await Promise.all([
+        fetch(`${API_BASE}/api/calendar/events`, { credentials: 'include' }),
+        fetch(`${API_BASE}/api/practice/cases?per_page=100&sort=next_hearing`, { credentials: 'include' }),
+      ]);
+      if (evRes.status === 401 || caseRes.status === 401) {
+        throw new Error('Your session has expired. Please sign in again.');
       }
-    })();
-    return () => { alive = false; };
+
+      const evData = evRes.ok ? await evRes.json().catch(() => ({})) : {};
+      const caseData = caseRes.ok ? await caseRes.json().catch(() => ({})) : {};
+
+      const rawEvents = Array.isArray(evData.events) ? evData.events
+        : Array.isArray(evData) ? evData : [];
+      const rawCases = Array.isArray(caseData.cases) ? caseData.cases
+        : Array.isArray(caseData) ? caseData : [];
+
+      // Normalize calendar events.
+      const fromEvents = rawEvents
+        .map((ev) => {
+          const d = parseDateOnly(ev.event_date);
+          if (!d) return null;
+          const meta = [ev.location, ev.opposing_counsel].filter(Boolean).join(' · ')
+            || String(ev.event_type || 'Event').replace(/_/g, ' ');
+          return {
+            date: d,
+            time: timeFrom(ev.event_date),
+            title: ev.title || 'Untitled event',
+            meta,
+            tone: toneForType(ev.event_type),
+            type: ev.event_type || 'event',
+            source: 'event',
+          };
+        })
+        .filter(Boolean);
+
+      // A case with a next_hearing is a calendar entry (like Today.jsx treats it).
+      const fromHearings = rawCases
+        .filter((c) => c && !c.closed && c.next_hearing)
+        .map((c) => {
+          const d = parseDateOnly(c.next_hearing);
+          if (!d) return null;
+          const meta = [c.court, c.case_no].filter(Boolean).join(' · ') || 'Hearing';
+          return {
+            date: d,
+            time: '',
+            title: c.title || 'Matter',
+            meta,
+            tone: 'warn',
+            type: 'hearing',
+            source: 'hearing',
+          };
+        })
+        .filter(Boolean);
+
+      setEvents([...fromEvents, ...fromHearings]);
+    } catch (err) {
+      setError(err.message || 'Failed to load calendar.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   // ── Agenda: upcoming events grouped by day ──────────────────────────────────
   const agenda = useMemo(() => {
@@ -190,7 +190,7 @@ export default function Calendar() {
           <div className="seg" style={{ width: 200 }}>
             {['agenda', 'month'].map((v) => <button key={v} className={view === v ? 'is-on' : ''} onClick={() => setView(v)} style={{ textTransform: 'capitalize' }}>{v}</button>)}
           </div>
-          <button className="lx-btn lx-btn--ghost lx-btn--sm"><Ic.Plus size={14} /> Add</button>
+          <button className="lx-btn lx-btn--ghost lx-btn--sm" onClick={() => setShowNew(true)}><Ic.Plus size={14} /> Add</button>
         </div>
       </div>
 
@@ -249,6 +249,78 @@ export default function Calendar() {
           </div>
         </div>
       )}
+
+      {showNew && <NewEventModal onClose={() => setShowNew(false)} onCreated={() => { setShowNew(false); load(); }} />}
     </div>
+  );
+}
+
+function NewEventModal({ onClose, onCreated }) {
+  const [form, setForm] = useState(() => {
+    const n = new Date();
+    const iso = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+    return { title: '', event_date: iso, event_type: 'hearing', location: '' };
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const save = async () => {
+    if (!form.title.trim()) { setErr('An event title is required.'); return; }
+    if (!form.event_date) { setErr('A date is required.'); return; }
+    setBusy(true); setErr('');
+    try {
+      const res = await fetch(`${API_BASE}/api/calendar/save`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf() },
+        body: JSON.stringify({
+          events: [{
+            event_date: form.event_date,
+            event_type: form.event_type,
+            title: form.title.trim(),
+            related_case_id: null,
+            location: form.location.trim(),
+            opposing_counsel: '',
+          }],
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.message || 'Could not save the event.');
+      onCreated();
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const TYPES = [
+    { v: 'hearing', label: 'Hearing' },
+    { v: 'deadline', label: 'Deadline' },
+    { v: 'meeting', label: 'Meeting' },
+    { v: 'other', label: 'Other' },
+  ];
+
+  return (
+    <Modal title="New event" onClose={onClose}
+      footer={<><button className="lx-btn lx-btn--ghost" onClick={onClose} disabled={busy}>Cancel</button><button className="lx-btn lx-btn--primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Add event'}</button></>}>
+      {err && <div role="alert" style={{ marginBottom: 12, color: 'var(--risk)', fontSize: 13 }}>{err}</div>}
+      <div><label className="lbl">Title</label><input className="inp" value={form.title} onChange={set('title')} placeholder="e.g. Bail application hearing" autoFocus /></div>
+      <div className="lx-row" style={{ gap: 14 }}>
+        <div style={{ flex: 1 }}><label className="lbl">Date</label><input className="inp" type="date" value={form.event_date} onChange={set('event_date')} /></div>
+        <div style={{ flex: 1 }}><label className="lbl">Type</label>
+          <select className="inp" value={form.event_type} onChange={set('event_type')}>
+            {TYPES.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+          </select>
+        </div>
+      </div>
+      <div><label className="lbl">Location <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label><input className="inp" value={form.location} onChange={set('location')} placeholder="e.g. Delhi High Court, Court Room 7" /></div>
+      <div className="lx-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        {TYPES.map((t) => (
+          <span key={t.v} className="chip" onClick={() => setForm((f) => ({ ...f, event_type: t.v }))}
+            style={form.event_type === t.v ? { background: 'var(--ink)', color: 'var(--paper)', cursor: 'pointer' } : { cursor: 'pointer' }}>{t.label}</span>
+        ))}
+      </div>
+    </Modal>
   );
 }

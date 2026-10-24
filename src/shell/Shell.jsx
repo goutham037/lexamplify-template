@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState, Suspense } from 'react';
+import { NavLink, Outlet, Link } from 'react-router-dom';
 import * as Ic from '../icons.jsx';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
 import ThemeStudio from '../components/ThemeStudio.jsx';
 import CommandBar from '../components/CommandBar.jsx';
 import Notifications from '../components/Notifications.jsx';
@@ -13,24 +14,30 @@ const GROUPS = [
   {
     label: 'Workspace',
     items: [
-      { to: '/', label: 'Today', Icon: Ic.Today, end: true },
+      { to: '/', label: 'Start', Icon: Ic.Today, end: true },
       { to: '/matters', label: 'Matters', Icon: Ic.Matters },
-      { to: '/draft', label: 'Draft', Icon: Ic.Draft, badge: true },
-      { to: '/research', label: 'Research', Icon: Ic.Research },
+      { to: '/dashboard', label: 'Dashboard', Icon: Ic.Sparkle },
+      { to: '/contract-analyzer', label: 'Contract Analyzer', Icon: Ic.Contracts, badge: true },
+      { to: '/auto-draft', label: 'Auto-Draft Studio', Icon: Ic.Draft, badge: true },
     ],
   },
   {
-    label: 'Review',
+    label: 'Litigation & disputes',
     items: [
-      { to: '/contracts', label: 'Contracts', Icon: Ic.Contracts },
-      { to: '/calendar', label: 'Calendar', Icon: Ic.Calendar },
+      { to: '/court-resources', label: 'Court Resources', Icon: Ic.Scale },
+      { to: '/calendar', label: 'Legal Calendar', Icon: Ic.Calendar },
+      { to: '/war-room', label: 'Virtual Courtroom', Icon: Ic.Gavel, badge: true },
     ],
   },
   {
-    label: 'Firm',
+    label: 'Practice & vault',
     items: [
-      { to: '/library', label: 'Library', Icon: Ic.Library },
-      { to: '/settings', label: 'Settings', Icon: Ic.Settings },
+      { to: '/practice', label: 'Practice', Icon: Ic.Users },
+      { to: '/vault', label: 'Case Vault', Icon: Ic.Shield },
+      { to: '/document-hub', label: 'Document Hub', Icon: Ic.Doc },
+      { to: '/conflict-engine', label: 'Conflict Engine', Icon: Ic.Search },
+      { to: '/firm-library', label: 'Firm Library', Icon: Ic.Library },
+      { to: '/legal-forms', label: 'Legal Forms', Icon: Ic.Edit },
     ],
   },
 ];
@@ -71,11 +78,13 @@ export default function Shell() {
 
         <div className="rail__foot">
           <div className="rail__user">
-            <div className="rail__avatar">{initial}</div>
-            <div className="rail__user-meta" style={{ minWidth: 0 }}>
-              <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</b>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{role}</span>
-            </div>
+            <Link to="/settings" onClick={() => setOpen(false)} title="Account & settings" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit', minWidth: 0, flex: 1 }}>
+              <div className="rail__avatar">{initial}</div>
+              <div className="rail__user-meta" style={{ minWidth: 0 }}>
+                <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</b>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{role}</span>
+              </div>
+            </Link>
             <button
               type="button"
               onClick={logout}
@@ -114,7 +123,13 @@ export default function Shell() {
           </div>
         </header>
 
-        <div className="main__scroll"><Outlet /></div>
+        <div className="main__scroll">
+          <ErrorBoundary>
+            <Suspense fallback={<div style={{ minHeight: '50vh', display: 'grid', placeItems: 'center', color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>Loading…</div>}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
       </div>
 
       {/* Theme Studio hidden for now — Slate Pro is the finalized default. Re-enable by rendering <ThemeStudio />. */}
