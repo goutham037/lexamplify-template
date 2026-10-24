@@ -21,7 +21,10 @@ const API_ORIGIN = (() => {
 })();
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-const AUTH_PATHS_EXCLUDED_FROM_REFRESH = ['/api/auth/login', '/api/auth/refresh', '/api/auth/register'];
+// /api/auth/me is excluded too: AuthContext.refreshSession does its own cookie
+// probe + cold-start retry on it, and letting the patch also refresh-and-replay
+// on its 401 collided with that (aborted request -> infinite "Opening…" splash).
+const AUTH_PATHS_EXCLUDED_FROM_REFRESH = ['/api/auth/login', '/api/auth/refresh', '/api/auth/register', '/api/auth/me'];
 
 function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrf_access_token=([^;]+)/);
