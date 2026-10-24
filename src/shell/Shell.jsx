@@ -5,6 +5,7 @@ import ThemeStudio from '../components/ThemeStudio.jsx';
 import CommandBar from '../components/CommandBar.jsx';
 import Notifications from '../components/Notifications.jsx';
 import { useSettings } from '../store/useSettings.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const fire = (name) => window.dispatchEvent(new Event(name));
 
@@ -40,6 +41,12 @@ export default function Shell() {
   const [open, setOpen] = useState(false);
   const layout = useSettings((st) => st.layout);
   const mini = layout === 'focus';
+  const { user, logout } = useAuth();
+
+  const displayName = user?.name || user?.full_name || user?.email || 'Advocate';
+  const role = user?.role || user?.designation || 'Advocate';
+  const firm = user?.firm_name || user?.workspace_name || 'Advocate Chambers';
+  const initial = (displayName || 'A').trim().charAt(0).toUpperCase();
 
   return (
     <div className="app">
@@ -64,8 +71,22 @@ export default function Shell() {
 
         <div className="rail__foot">
           <div className="rail__user">
-            <div className="rail__avatar">A</div>
-            <div className="rail__user-meta"><b>Aarav Advocate</b><span>Senior Partner</span></div>
+            <div className="rail__avatar">{initial}</div>
+            <div className="rail__user-meta" style={{ minWidth: 0 }}>
+              <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</b>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{role}</span>
+            </div>
+            <button
+              type="button"
+              onClick={logout}
+              title="Sign out"
+              aria-label="Sign out"
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--rail-muted)', cursor: 'pointer', padding: 6, borderRadius: 8, display: 'flex' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
           </div>
         </div>
       </aside>
@@ -75,7 +96,7 @@ export default function Shell() {
           <div className="topbar__left">
             <button className="icon-btn rail-toggle" onClick={() => setOpen((v) => !v)} aria-label="Menu"><Ic.Menu size={18} /></button>
             <div className="rail__mono topbar__mono" style={{ width: 32, height: 32, fontSize: 16 }}>L</div>
-            <div className="topbar__crumb"><b>Advocate Chambers</b><span className="topbar__sep">·</span><span>Delhi</span></div>
+            <div className="topbar__crumb"><b>{firm}</b></div>
           </div>
 
           <nav className="topnav">
