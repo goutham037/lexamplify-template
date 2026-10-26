@@ -80,6 +80,15 @@ function Empty({ icon: Icon = Ic.Scale, title, children }) {
 export default function CourtResources() {
   const [tab, setTab] = useState('supreme');
   const [copied, setCopied] = useState('');
+  const [pdfDoc, setPdfDoc] = useState(null);
+
+  // Open a document in-app: PDFs render in an embedded viewer (streamed
+  // same-origin through /api/court-pdf); interactive portals/pages still
+  // open externally.
+  const openDoc = (url, title) => {
+    if (url && /\.pdf(\?|#|$)/i.test(url)) setPdfDoc({ url, title });
+    else openExternal(url);
+  };
 
   const copy = (text, key) => {
     if (!text) return;
@@ -425,7 +434,7 @@ export default function CourtResources() {
                         <div className="lx-section-head" style={{ marginBottom: 12 }}><h3 style={{ fontSize: 15 }}>Forms &amp; templates</h3></div>
                         <div className="lx-list">
                           {hcDetail.forms.map((f, i) => (
-                            <div className="lx-item" key={i} onClick={() => openExternal(f.url)} style={{ cursor: f.url ? 'pointer' : 'default' }}>
+                            <div className="lx-item" key={i} onClick={() => openDoc(f.url, f.name)} style={{ cursor: f.url ? 'pointer' : 'default' }}>
                               <div className="lx-item__ico"><Ic.Doc size={18} /></div>
                               <div className="lx-item__body">
                                 <div className="lx-item__title">{f.name}</div>
@@ -602,7 +611,7 @@ export default function CourtResources() {
               : (
                 <div className="lx-list">
                   {rosterRows.map((r, i) => (
-                    <div className="lx-item" key={r.url || i} onClick={() => openExternal(r.url)} style={{ cursor: r.url ? 'pointer' : 'default', alignItems: 'flex-start' }}>
+                    <div className="lx-item" key={r.url || i} onClick={() => openDoc(r.url, r.title)} style={{ cursor: r.url ? 'pointer' : 'default', alignItems: 'flex-start' }}>
                       <div className="lx-item__ico"><Ic.Doc size={18} /></div>
                       <div className="lx-item__body">
                         <div className="lx-row" style={{ gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
@@ -689,6 +698,31 @@ export default function CourtResources() {
                   ))}
                 </div>
               )}
+          </div>
+        </div>
+      )}
+
+      {pdfDoc && (
+        <div onMouseDown={(e) => { if (e.target === e.currentTarget) setPdfDoc(null); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(12,20,16,0.55)',
+                   display: 'flex', flexDirection: 'column', padding: 'min(4vh,32px) min(4vw,32px)' }}>
+          <div onMouseDown={(e) => e.stopPropagation()}
+            style={{ background: 'var(--surface, #fff)', color: 'var(--ink, #111)', borderRadius: 14,
+                     display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden',
+                     boxShadow: '0 24px 70px rgba(0,0,0,0.35)' }}>
+            <div className="lx-between" style={{ padding: '12px 16px', borderBottom: '1px solid var(--line, #e5e7eb)', gap: 12 }}>
+              <div className="lx-row" style={{ gap: 10, minWidth: 0 }}>
+                <Ic.Doc size={18} />
+                <span className="lx-item__title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pdfDoc.title || 'Document'}</span>
+              </div>
+              <div className="lx-row" style={{ gap: 8 }}>
+                <a className="lx-btn lx-btn--ghost lx-btn--sm" href={pdfDoc.url} target="_blank" rel="noopener noreferrer"><Ic.Globe size={14} /> Original</a>
+                <button className="lx-btn lx-btn--sm" onClick={() => setPdfDoc(null)}>Close</button>
+              </div>
+            </div>
+            <iframe title={pdfDoc.title || 'Court document'}
+              src={`${API_BASE}/api/court-pdf?url=${encodeURIComponent(pdfDoc.url)}`}
+              style={{ flex: 1, width: '100%', border: 0, background: '#f3f4f6' }} />
           </div>
         </div>
       )}
