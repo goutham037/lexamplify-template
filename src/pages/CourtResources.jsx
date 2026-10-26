@@ -7,6 +7,8 @@ const TABS = [
   { id: 'supreme', label: 'Supreme Court' },
   { id: 'high', label: 'High Courts' },
   { id: 'judges', label: 'Judges' },
+  { id: 'rosters', label: 'Rosters' },
+  { id: 'bar', label: 'Bar Councils' },
   { id: 'acts', label: 'Bare Acts' },
   { id: 'causelists', label: 'Cause Lists' },
   { id: 'feed', label: 'Legal Feed' },
@@ -182,6 +184,27 @@ export default function CourtResources() {
     } catch (e) { setEventsState('error:' + e.message); }
   }, []);
 
+  // ── Court rosters (sitting / bail / duty / vacation) ────────────────────
+  const [rosters, setRosters] = useState([]);
+  const [rostersState, setRostersState] = useState('idle');
+  const [rosterCat, setRosterCat] = useState('all');
+  const [rosterQ, setRosterQ] = useState('');
+  const loadRosters = useCallback(async () => {
+    setRostersState('loading');
+    try { const data = await getJSON('/api/court-rosters'); setRosters(asArray(data?.rosters)); setRostersState('ready'); }
+    catch (e) { setRostersState('error:' + e.message); }
+  }, []);
+
+  // ── Bar associations / councils directory ───────────────────────────────
+  const [bars, setBars] = useState([]);
+  const [barsState, setBarsState] = useState('idle');
+  const [barQ, setBarQ] = useState('');
+  const loadBars = useCallback(async () => {
+    setBarsState('loading');
+    try { const data = await getJSON('/api/court-bar-associations'); setBars(asArray(data?.bar_associations)); setBarsState('ready'); }
+    catch (e) { setBarsState('error:' + e.message); }
+  }, []);
+
   // ── Lazy per-tab loading ────────────────────────────────────────────────
   useEffect(() => {
     if (tab === 'supreme' && scState === 'idle') loadSc();
@@ -189,8 +212,10 @@ export default function CourtResources() {
     if (tab === 'judges' && nationalState === 'idle') loadNational();
     if ((tab === 'acts' || tab === 'causelists') && globalsState === 'idle') loadGlobals();
     if (tab === 'feed' && eventsState === 'idle') loadEvents();
-  }, [tab, scState, hcListState, nationalState, globalsState, eventsState,
-      loadSc, loadHcList, loadNational, loadGlobals, loadEvents]);
+    if (tab === 'rosters' && rostersState === 'idle') loadRosters();
+    if (tab === 'bar' && barsState === 'idle') loadBars();
+  }, [tab, scState, hcListState, nationalState, globalsState, eventsState, rostersState, barsState,
+      loadSc, loadHcList, loadNational, loadGlobals, loadEvents, loadRosters, loadBars]);
 
   useEffect(() => { if (jMode === 'district') loadDistrict(distKey); }, [jMode, distKey, loadDistrict]);
 
@@ -243,6 +268,25 @@ export default function CourtResources() {
       .map(([key, url]) => ({ label: prettify(key), url })),
   [globals.cause_list_urls]);
 
+  const rosterCats = useMemo(() => {
+    const set = new Set(rosters.map((r) => r.category).filter(Boolean));
+    return ['all', ...Array.from(set)];
+  }, [rosters]);
+  const rosterRows = useMemo(() => {
+    const q = rosterQ.trim().toLowerCase();
+    return rosters.filter((r) =>
+      (rosterCat === 'all' || r.category === rosterCat) &&
+      (!q || String(r.title || '').toLowerCase().includes(q) || String(r.court || '').toLowerCase().includes(q)));
+  }, [rosters, rosterCat, rosterQ]);
+
+  const barRows = useMemo(() => {
+    const q = barQ.trim().toLowerCase();
+    return bars.filter((b) => !q
+      || String(b.name || '').toLowerCase().includes(q)
+      || String(b.state || '').toLowerCase().includes(q)
+      || String(b.kind || '').toLowerCase().includes(q));
+  }, [bars, barQ]);
+
   const errMsg = (s) => (s.startsWith('error:') ? s.slice(6) : '');
 
   return (
@@ -250,7 +294,7 @@ export default function CourtResources() {
       <div className="ph">
         <span className="ph__eyebrow">Reference</span>
         <h1 className="ph__title">Court Resources</h1>
-        <p className="ph__sub">The Supreme Court, every High Court, judges rosters, bare acts and daily cause lists — one considered desk.</p>
+        <p className="ph__sub">The Supreme Court, every High Court, judges, sitting &amp; bail rosters, bar councils, bare acts and daily cause lists — one considered desk.</p>
       </div>
 
       <div className="tabs">
@@ -531,6 +575,79 @@ export default function CourtResources() {
                 ))}
               </div>
             )}
+        </div>
+      )}
+
+      {/* ── ROSTERS ── */}
+      {tab === 'rosters' && (
+        <div className="lx-stack" style={{ gap: 20 }}>
+          <div className="lx-between" style={{ flexWrap: 'wrap', gap: 12 }}>
+            <div className="chip-row">
+              {rosterCats.map((c) => (
+                <span key={c} className={`chip ${rosterCat === c ? 'is-on' : ''}`} onClick={() => setRosterCat(c)} style={{ textTransform: 'capitalize' }}>
+                  {c === 'all' ? 'All' : c}
+                </span>
+              ))}
+            </div>
+            <div className="lx-field" style={{ height: 40, maxWidth: 280 }}>
+              <Ic.Search size={15} />
+              <input value={rosterQ} onChange={(e) => setRosterQ(e.target.value)} placeholder="Filter rosters…" style={{ fontSize: 14 }} />
+            </div>
+          </div>
+
+          <div className="lx-card lx-card--pad">
+            {rostersState === 'loading' ? <Loading label="Loading court rosters…" />
+              : rostersState.startsWith('error') ? <ErrorState message={errMsg(rostersState)} onRetry={loadRosters} />
+              : rosterRows.length === 0 ? <Empty icon={Ic.Calendar} title="No rosters published">{rosters.length === 0 ? 'The latest sitting, bail, duty and vacation rosters appear here once the daily capture has run.' : 'Nothing matches those filters.'}</Empty>
+              : (
+                <div className="lx-list">
+                  {rosterRows.map((r, i) => (
+                    <div className="lx-item" key={r.url || i} onClick={() => openExternal(r.url)} style={{ cursor: r.url ? 'pointer' : 'default', alignItems: 'flex-start' }}>
+                      <div className="lx-item__ico"><Ic.Doc size={18} /></div>
+                      <div className="lx-item__body">
+                        <div className="lx-row" style={{ gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                          {r.category && <span className="lx-badge lx-badge--muted" style={{ textTransform: 'capitalize' }}>{r.category}</span>}
+                          {r.effective_date && <span className="lx-item__meta">w.e.f. {r.effective_date}</span>}
+                        </div>
+                        <div className="lx-item__title" style={{ whiteSpace: 'normal' }}>{r.title}</div>
+                        <div className="lx-item__meta">{r.court}</div>
+                      </div>
+                      {r.url && <Ic.Arrow size={15} />}
+                    </div>
+                  ))}
+                </div>
+              )}
+          </div>
+        </div>
+      )}
+
+      {/* ── BAR COUNCILS ── */}
+      {tab === 'bar' && (
+        <div className="lx-stack" style={{ gap: 20 }}>
+          <div className="lx-field" style={{ height: 40, maxWidth: 340 }}>
+            <Ic.Search size={15} />
+            <input value={barQ} onChange={(e) => setBarQ(e.target.value)} placeholder="Search bar councils & associations…" style={{ fontSize: 14 }} />
+          </div>
+          <div className="lx-card lx-card--pad">
+            {barsState === 'loading' ? <Loading label="Loading the bar directory…" />
+              : barsState.startsWith('error') ? <ErrorState message={errMsg(barsState)} onRetry={loadBars} />
+              : barRows.length === 0 ? <Empty icon={Ic.Scale} title="No bodies listed">{bars.length === 0 ? 'The bar directory hasn’t been populated yet. Verified councils and associations appear here once added.' : 'Nothing matches that search.'}</Empty>
+              : (
+                <div className="lx-list">
+                  {barRows.map((b, i) => (
+                    <div className="lx-item" key={b.url || i} onClick={() => openExternal(b.url)} style={{ cursor: b.url ? 'pointer' : 'default' }}>
+                      <div className="lx-item__ico"><Ic.Scale size={18} /></div>
+                      <div className="lx-item__body">
+                        <div className="lx-item__title">{b.name}</div>
+                        <div className="lx-item__meta">{[b.state, b.phone, b.email].filter(Boolean).join(' · ') || 'Bar body'}</div>
+                      </div>
+                      {b.kind && <span className="lx-badge lx-badge--muted">{b.kind}</span>}
+                      {b.url && <Ic.Arrow size={15} />}
+                    </div>
+                  ))}
+                </div>
+              )}
+          </div>
         </div>
       )}
 
