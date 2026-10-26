@@ -18,6 +18,10 @@ import Dashboard from './pages/Dashboard.jsx';
 import CourtResources from './pages/CourtResources.jsx';
 import ConflictEngine from './pages/ConflictEngine.jsx';
 import LegalForms from './pages/LegalForms.jsx';
+import CaseVault from './pages/CaseVault.jsx';
+import DocumentHub from './pages/DocumentHub.jsx';
+import Practice from './pages/Practice.jsx';
+import WarRoom from './pages/WarRoom.jsx';
 
 // Gate the whole shell behind a real session. While the cookie is being verified
 // (GET /api/auth/me) we show a calm splash; a verified-logged-out user goes to /login.
@@ -58,17 +62,16 @@ export default function App() {
             <Route path="/auto-draft" element={<Draft />} />
             <Route path="/contract-analyzer" element={<Contracts />} />
             <Route path="/firm-library" element={<Library />} />
-            {/* Rebuilt from scratch in the luxury design */}
+            {/* All rebuilt from scratch in the luxury design */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/court-resources" element={<CourtResources />} />
             <Route path="/conflict-engine" element={<ConflictEngine />} />
             <Route path="/legal-forms" element={<LegalForms />} />
-            {/* Being migrated next — placeholder (NOT legacy code) */}
-            <Route path="/war-room" element={<Soon title="Virtual Courtroom" blurb="Hearing prep, opening drafts and argument simulation — rebuilt in the new design." />} />
-            <Route path="/practice" element={<Soon title="Practice" blurb="Your chambers’ practice management — clients, matters, RTI, reports — rebuilt in the new design." />} />
-            <Route path="/practice/*" element={<Soon title="Practice" />} />
-            <Route path="/vault" element={<Soon title="Case Vault" blurb="Every matter’s documents, folders and provenance — rebuilt in the new design." />} />
-            <Route path="/document-hub" element={<Soon title="Document Hub" blurb="Filing, scanning and bundling your documents — rebuilt in the new design." />} />
+            <Route path="/war-room" element={<WarRoom />} />
+            <Route path="/practice" element={<Practice />} />
+            <Route path="/practice/*" element={<Practice />} />
+            <Route path="/vault" element={<CaseVault />} />
+            <Route path="/document-hub" element={<DocumentHub />} />
             <Route path="*" element={<Today />} />
           </Route>
         </Routes>
